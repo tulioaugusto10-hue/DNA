@@ -1,22 +1,22 @@
-const { Client } = require('pg');
+const { Pool } = require('pg');
 
-const client = new Client({
-  connectionString: process.env.DATABASE_URL || 
-    "postgresql://origem_iprq_user:NG5yCul6MVyipMEGwSTOf7kUdWPihWgB@dpg-d5sr59vpm1nc73cj6cf0-a.oregon-postgres.render.com/origem_iprq",
-  ssl: { rejectUnauthorized: false }
+const pool = new Pool({
+  connectionString: "postgresql://origem_iprq_user:NG5yCul6MVyipMEGwSTOf7kUdWPihWgB@dpg-d5sr59vpm1nc73cj6cf0-a.oregon-postgres.render.com/origem_iprq",
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-async function test() {
+async function testar() {
   try {
-    console.log("🔹 Tentando conectar...");
-    await client.connect();
-    console.log("✅ Conexão bem-sucedida!");
+    const client = await pool.connect();
+    console.log("✅ Conectado com Pool!");
+    client.release();
   } catch (err) {
-    console.error("❌ Erro de conexão:", err.message);
+    console.error("❌ Erro Pool:", err.message);
   } finally {
-    await client.end();
+    await pool.end();
   }
 }
 
-test();
-
+testar();

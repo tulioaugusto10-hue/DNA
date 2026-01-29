@@ -2,27 +2,25 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
-// Cria pool de conexões com SSL (necessário no Render)
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // use seu DATABASE_URL do Render
+  connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // necessário para Render
+    rejectUnauthorized: false
   },
-  max: 10,            // número máximo de conexões simultâneas
-  idleTimeoutMillis: 30000, // desconecta conexões ociosas após 30s
-  connectionTimeoutMillis: 2000 // timeout para novas conexões
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000 // 🔥 AQUI ESTÁ A CHAVE
 });
 
-// Testa a conexão
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('Erro ao conectar no banco:', err.stack);
-  } else {
-    console.log('Conexão ao PostgreSQL estabelecida com sucesso!');
+// Teste seguro de conexão
+(async () => {
+  try {
+    const client = await pool.connect();
+    console.log('✅ Conexão ao PostgreSQL estabelecida com sucesso!');
+    client.release();
+  } catch (err) {
+    console.error('❌ Erro ao conectar no banco:', err.message);
   }
-  release(); // libera o cliente de volta para o pool
-});
+})();
 
 export default pool;
-
-

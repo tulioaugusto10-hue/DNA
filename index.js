@@ -1,28 +1,39 @@
+// =========================
+// IMPORTAÇÕES
+// =========================
 const express = require('express');
 const fs = require('fs');
 const { Pool } = require('pg');
-const cors = require('cors'); // << adicione esta linha
+const cors = require('cors');
 
 const app = express();
-const port = process.env.PORT || 10000; // Render geralmente usa porta >= 10000
+const port = process.env.PORT || 10000; // Render geralmente usa porta >=10000
 
-// 🔓 LIBERA CORS PARA QUALQUER ORIGEM
+// =========================
+// MIDDLEWARES
+// =========================
+
+// 🔓 Libera CORS para qualquer origem
 app.use(cors({
-  origin: "*", // permite qualquer site acessar
+  origin: "*", // permite que qualquer site acesse sua API
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"]
 }));
 
-app.use(express.json()); // para lidar com JSON no corpo da requisição
+// Permite ler JSON do corpo das requisições
+app.use(express.json());
 
+// =========================
+// CONEXÃO COM POSTGRES
+// =========================
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-/* =========================
-   TESTE DE BANCO
-========================= */
+// =========================
+// TESTE DE BANCO
+// =========================
 app.get('/', async (req, res) => {
   try {
     const r = await pool.query('SELECT NOW()');
@@ -32,9 +43,9 @@ app.get('/', async (req, res) => {
   }
 });
 
-/* =========================
-   CRIAR TABELA
-========================= */
+// =========================
+// CRIAR TABELA
+// =========================
 app.get('/criar-tabela', async (req, res) => {
   try {
     await pool.query(`
@@ -44,7 +55,6 @@ app.get('/criar-tabela', async (req, res) => {
         descricao TEXT
       )
     `);
-
     res.json({ status: 'tabela criada' });
   } catch (err) {
     console.error(err);
@@ -52,9 +62,9 @@ app.get('/criar-tabela', async (req, res) => {
   }
 });
 
-/* =========================
-   IMPORTAR JSON
-========================= */
+// =========================
+// IMPORTAR JSON
+// =========================
 app.get('/importar', async (req, res) => {
   try {
     const dados = JSON.parse(fs.readFileSync('./dados.json', 'utf8'));
@@ -76,9 +86,9 @@ app.get('/importar', async (req, res) => {
   }
 });
 
-/* =========================
-   BUSCA
-========================= */
+// =========================
+// BUSCA HISTÓRICA
+// =========================
 app.get('/historia', async (req, res) => {
   const termo = req.query.termo || '';
 
@@ -90,10 +100,14 @@ app.get('/historia', async (req, res) => {
 
     res.json(r.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ erro: 'erro na busca' });
   }
 });
 
+// =========================
+// INICIA SERVIDOR
+// =========================
 app.listen(port, () => {
   console.log('API rodando na porta', port);
 });

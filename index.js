@@ -1,9 +1,19 @@
 const express = require('express');
 const fs = require('fs');
 const { Pool } = require('pg');
+const cors = require('cors'); // << adicione esta linha
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000; // Render geralmente usa porta >= 10000
+
+// 🔓 LIBERA CORS PARA QUALQUER ORIGEM
+app.use(cors({
+  origin: "*", // permite qualquer site acessar
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
+}));
+
+app.use(express.json()); // para lidar com JSON no corpo da requisição
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -23,7 +33,7 @@ app.get('/', async (req, res) => {
 });
 
 /* =========================
-   PASSO 3 — CRIAR TABELA
+   CRIAR TABELA
 ========================= */
 app.get('/criar-tabela', async (req, res) => {
   try {
@@ -43,13 +53,11 @@ app.get('/criar-tabela', async (req, res) => {
 });
 
 /* =========================
-   PASSO 4 — IMPORTAR JSON
+   IMPORTAR JSON
 ========================= */
 app.get('/importar', async (req, res) => {
   try {
-    const dados = JSON.parse(
-      fs.readFileSync('./dados.json', 'utf8')
-    );
+    const dados = JSON.parse(fs.readFileSync('./dados.json', 'utf8'));
 
     for (const item of dados) {
       await pool.query(

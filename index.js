@@ -1,33 +1,37 @@
 const express = require('express');
-const cors = require('cors');
+const fs = require('fs');
 const { Pool } = require('pg');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+const port = process.env.PORT || 3000;
 
-// conexão com PostgreSQL do Render
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// rota teste
-app.get('/', (req, res) => {
-  res.json({ status: 'API de História online 📚' });
+// TESTE
+app.get('/', async (req, res) => {
+  const r = await pool.query('SELECT NOW()');
+  res.json({ banco: 'conectado', hora: r.rows[0] });
 });
 
-// rota simples de teste no banco
-app.get('/db', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT NOW()');
-    res.json({ banco: 'conectado', hora: result.rows[0] });
-  } catch (err) {
-    res.status(500).json({ erro: err.message });
-  }
+// IMPORTAÇÃO SIMPLES
+app.get('/importar', async (req, res) => {
+  const dados = JSON.parse(fs.readFileSync('./dados.json', 'utf8'));
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS dados (
+      id SERIAL PRIMARY KEY,
+      conteudo JSONB
+    )
+  `);
+
+  await pool.query('INSERT INTO dados (conteudo) VALUES ($1)', [dados]);
+
+  res.json({ status: 'ok', registros: 1 });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 API rodando na porta ${PORT}`);
+app.listen(port, () => {
+  console.log('API rodando na porta', port);
 });
